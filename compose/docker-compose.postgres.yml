@@ -1,0 +1,79 @@
+# Overlay that swaps the six JPA services from in-memory H2 to PostgreSQL and
+# activates the `prod` Spring profile (Flyway migrations, ddl-auto: validate).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d --build
+#
+# Data now survives `docker compose restart <service>`. `docker compose down -v`
+# wipes the postgres volume.
+
+name: ecom
+
+x-pg-env: &pg-env
+  SPRING_PROFILES_ACTIVE: prod
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-ecom}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-ecom-dev-password}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    networks: [ecom]
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ecom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ecom-dev-password}
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ecom}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  auth-service:
+    environment:
+      <<: *pg-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  user-service:
+    environment:
+      <<: *pg-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/userdb
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  product-service:
+    environment:
+      <<: *pg-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/productdb
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  inventory-service:
+    environment:
+      <<: *pg-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventorydb
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  payment-service:
+    environment:
+      <<: *pg-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/paymentdb
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  order-service:
+    environment:
+      <<: *pg-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/orderdb
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pgdata:
