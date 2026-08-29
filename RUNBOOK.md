@@ -60,6 +60,25 @@ Each service serves its own Swagger UI at `http://localhost:<port>/swagger-ui.ht
 
 Failure paths it also checks: no token → 401; over-stock (product 5, huge qty) → 409 `REJECTED_STOCK`; total above the ceiling → 402 `PAYMENT_FAILED`.
 
+For manual poking, `infra/http/platform.http` runs the same flow from IntelliJ's HTTP client
+(or the VS Code REST Client), capturing the token and ids between requests.
+
+## Testing
+
+| Layer | Where | Runs in |
+|---|---|---|
+| Unit (JUnit 5 + Mockito + AssertJ) | each service `src/test` | `./gradlew test` |
+| Controller slice (`@WebMvcTest` + MockMvc) | each service | `./gradlew test` |
+| Repository slice (`@DataJpaTest`) | auth, user, product, order | `./gradlew test` |
+| Integration — real Postgres (`@SpringBootTest` + Testcontainers `@ServiceConnection`) | `order-service` | `./gradlew test` (needs Docker) |
+| End-to-end API (REST Assured, through the gateway) | `e2e-tests/` | `./gradlew test` — self-skips when the stack is down |
+| Coverage | JaCoCo report per service | `build/reports/jacoco/` |
+
+The `order-service` integration test is what proved the placement flow persists a
+`REJECTED_STOCK` / `PAYMENT_FAILED` order as an audit record even though the call ends in an
+exception — the writes are short independent transactions (`OrderTransactions`), not one
+transaction spanning the external HTTP calls.
+
 ## Security & secrets
 
 - **No secret is committed.** `infra/compose/.env` is gitignored; `infra/compose/.env.example` is the committed contract.
@@ -111,6 +130,7 @@ with the frontend / mobile apps.
 - **`common` library** — share the JWT helper instead of re-implementing it in auth-service.
 - **CI** — re-enable OWASP Dependency-Check, SonarCloud, Snyk as GitHub Actions with Environment secrets; JaCoCo 80% gate as a ratchet; `gitleaks`; consolidate `gradle/quality.gradle` into a real `build-conventions` composite build.
 - **Dependency locking** — regenerate `gradle.lockfile`s with `--write-locks` once dependencies settle.
+- **More testing** — Testcontainers integration tests on the other JPA services; consumer-driven contract tests (Spring Cloud Contract / Pact) between order-service and its collaborators; mutation testing (PITest); load tests (k6 / Gatling).
 - **Cloud** — Terraform (VPC/RDS/AKS or EKS), Helm charts, Key Vault / Secrets Manager, OIDC federation from GitHub Actions.
 - **Observability** — ELK / Prometheus + Grafana, distributed tracing.
 - **Clients** — web frontend (MSAL.js) and iOS/Android apps (MSAL); the API is already shaped for them (single gateway, `/api/**` JSON, JWT bearer, CORS).
