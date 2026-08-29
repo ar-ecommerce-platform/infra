@@ -1,0 +1,23 @@
+# CI overlay: run the stack from published GHCR images instead of building
+# locally. Used by the e2e workflow.
+#
+#   IMAGE_TAG=<sha> docker compose \
+#     -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.ci.yml up -d
+
+name: ecom
+
+x-img: &img
+  build: !reset null
+  pull_policy: always
+
+services:
+  discovery-server:     { <<: *img, image: "ghcr.io/ar-ecommerce-platform/discovery-server:${IMAGE_TAG:-develop}" }
+  config-server:        { <<: *img, image: "ghcr.io/ar-ecommerce-platform/config-server:${IMAGE_TAG:-develop}" }
+  api-gateway:          { <<: *img, image: "ghcr.io/ar-ecommerce-platform/api-gateway:${IMAGE_TAG:-develop}" }
+  auth-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/auth-service:${IMAGE_TAG:-develop}" }
+  user-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/user-service:${IMAGE_TAG:-develop}" }
+  product-service:      { <<: *img, image: "ghcr.io/ar-ecommerce-platform/product-service:${IMAGE_TAG:-develop}" }
+  inventory-service:    { <<: *img, image: "ghcr.io/ar-ecommerce-platform/inventory-service:${IMAGE_TAG:-develop}" }
+  order-service:        { <<: *img, image: "ghcr.io/ar-ecommerce-platform/order-service:${IMAGE_TAG:-develop}" }
+  payment-service:      { <<: *img, image: "ghcr.io/ar-ecommerce-platform/payment-service:${IMAGE_TAG:-develop}" }
+  notification-service: { <<: *img, image: "ghcr.io/ar-ecommerce-platform/notification-service:${IMAGE_TAG:-develop}" }
