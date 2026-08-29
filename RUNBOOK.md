@@ -17,7 +17,8 @@ Local, offline operation of the `ar-ecommerce-platform` stack.
 | notification-service | 8086 | in-memory; logs + stores notifications |
 | user-service | 8087 | user profiles (H2) |
 
-All databases are in-memory H2 — **data resets on every restart**.
+By default the six data services run on in-memory **H2** — fast, and **data resets on every
+restart**. The PostgreSQL overlay (below) makes data persist.
 
 ## Run it (Docker — supported path)
 
@@ -30,6 +31,22 @@ docker compose -f infra/compose/docker-compose.yml down
 ```
 
 First build pulls base images + all Gradle dependencies; expect several minutes.
+
+## Run it against PostgreSQL (`prod` profile)
+
+Add the overlay. It starts one `postgres:16` container (a database per service),
+sets `SPRING_PROFILES_ACTIVE=prod`, and each service runs **Flyway** migrations then
+`ddl-auto: validate`.
+
+```bash
+docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.postgres.yml up -d --build
+```
+
+- Data now survives `docker compose ... restart <service>`.
+- `docker compose ... down -v` drops the `pgdata` volume (full reset).
+- Inspect: `docker exec -it postgres psql -U ecom -d orderdb` → `\dt`, `select * from orders;`
+- Migrations live in each service at `src/main/resources/db/migration/V*.sql`; the H2 dev
+  profile keeps `ddl-auto: update` and has Flyway disabled.
 
 ## Run it (no Docker)
 
@@ -122,7 +139,7 @@ with the frontend / mobile apps.
 
 ## Deferred — the next lessons
 
-- **Postgres + prod profiles** wired end-to-end (structure is in place; `auth-service-prod.yml` shows the shape).
+- ~~Postgres + prod profiles~~ — **done**: `docker-compose.postgres.yml` overlay, per-service Flyway migrations, `ddl-auto: validate`. Next here: connection pooling tuning, one Postgres *role* per service, and a managed instance in cloud.
 - **Event-driven notifications** — order-service publishes `OrderConfirmed` to RabbitMQ/Kafka; notification-service consumes it (choreography vs the current synchronous orchestration).
 - **Resilience** — Resilience4j retries, timeouts, circuit breakers around the order-service client calls; compensation when a partial stock reservation must be rolled back.
 - **RS256 + JWKS** — auth-service signs with a private key and exposes `/oauth2/jwks`; the gateway validates local and Entra tokens the same way. Currently HS256 shared-secret for the local path.
