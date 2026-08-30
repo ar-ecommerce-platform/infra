@@ -1,0 +1,102 @@
+### ar-ecommerce-platform — manual API walkthrough (IntelliJ HTTP Client / VS Code REST Client)
+#
+# Start the stack first:  docker compose -f ../compose/docker-compose.yml up -d
+# Then run these top to bottom. {{host}} comes from http-client.env.json (select "local").
+# Requests capture values (token, ids) into variables for the ones that follow.
+
+@email = demo-{{$timestamp}}@example.com
+@password = Passw0rd!
+
+### Register
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+> {%
+  client.test("registered", () => client.assert(response.status === 201));
+%}
+
+### Login  ->  capture token
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+> {%
+  client.test("got a token", () => client.assert(response.body.token));
+  client.global.set("token", response.body.token);
+%}
+
+### List products  ->  capture two ids
+GET {{host}}/api/products
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("has products", () => client.assert(response.body.length >= 2));
+  client.global.set("p1", response.body[0].id);
+  client.global.set("p2", response.body[1].id);
+%}
+
+### Inventory for product 1
+GET {{host}}/api/inventory/{{p1}}
+Authorization: Bearer {{token}}
+
+### Place an order  ->  capture order + payment ids
+POST {{host}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "{{email}}",
+  "items": [
+    { "productId": {{p1}}, "quantity": 2 },
+    { "productId": {{p2}}, "quantity": 1 }
+  ]
+}
+
+> {%
+  client.test("order confirmed", () => client.assert(response.body.status === "CONFIRMED"));
+  client.global.set("orderId", response.body.id);
+  client.global.set("paymentId", response.body.paymentId);
+%}
+
+### Payment record
+GET {{host}}/api/payments/{{paymentId}}
+Authorization: Bearer {{token}}
+
+### Notifications for this user
+GET {{host}}/api/notifications?userId={{email}}
+Authorization: Bearer {{token}}
+
+### Orders for this user
+GET {{host}}/api/orders?userId={{email}}
+Authorization: Bearer {{token}}
+
+### --- failure paths ---
+
+### No token -> 401
+POST {{host}}/api/orders
+Content-Type: application/json
+
+{ "userId": "{{email}}", "items": [ { "productId": {{p1}}, "quantity": 1 } ] }
+
+> {% client.test("401", () => client.assert(response.status === 401)); %}
+
+### Over-stock (product 5, huge qty) -> 409 REJECTED_STOCK
+POST {{host}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "userId": "{{email}}", "items": [ { "productId": 5, "quantity": 9999 } ] }
+
+> {% client.test("409", () => client.assert(response.status === 409)); %}
+
+### Over the payment ceiling -> 402 PAYMENT_FAILED
+POST {{host}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "userId": "{{email}}", "items": [ { "productId": {{p1}}, "quantity": 5 } ] }
+
+> {% client.test("402", () => client.assert(response.status === 402)); %}
