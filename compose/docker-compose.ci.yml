@@ -11,13 +11,13 @@ x-img: &img
   pull_policy: always
 
 services:
-  discovery-server:     { <<: *img, image: "ghcr.io/ar-ecommerce-platform/discovery-server:${IMAGE_TAG:-develop}" }
-  config-server:        { <<: *img, image: "ghcr.io/ar-ecommerce-platform/config-server:${IMAGE_TAG:-develop}" }
-  api-gateway:          { <<: *img, image: "ghcr.io/ar-ecommerce-platform/api-gateway:${IMAGE_TAG:-develop}" }
-  auth-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/auth-service:${IMAGE_TAG:-develop}" }
-  user-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/user-service:${IMAGE_TAG:-develop}" }
-  product-service:      { <<: *img, image: "ghcr.io/ar-ecommerce-platform/product-service:${IMAGE_TAG:-develop}" }
-  inventory-service:    { <<: *img, image: "ghcr.io/ar-ecommerce-platform/inventory-service:${IMAGE_TAG:-develop}" }
-  order-service:        { <<: *img, image: "ghcr.io/ar-ecommerce-platform/order-service:${IMAGE_TAG:-develop}" }
-  payment-service:      { <<: *img, image: "ghcr.io/ar-ecommerce-platform/payment-service:${IMAGE_TAG:-develop}" }
-  notification-service: { <<: *img, image: "ghcr.io/ar-ecommerce-platform/notification-service:${IMAGE_TAG:-develop}" }
+  discovery-server:     { <<: *img, image: "ghcr.io/ar-ecommerce-platform/discovery-server:${IMAGE_TAG:-main}" }
+  config-server:        { <<: *img, image: "ghcr.io/ar-ecommerce-platform/config-server:${IMAGE_TAG:-main}" }
+  api-gateway:          { <<: *img, image: "ghcr.io/ar-ecommerce-platform/api-gateway:${IMAGE_TAG:-main}" }
+  auth-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/auth-service:${IMAGE_TAG:-main}" }
+  user-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/user-service:${IMAGE_TAG:-main}" }
+  product-service:      { <<: *img, image: "ghcr.io/ar-ecommerce-platform/product-service:${IMAGE_TAG:-main}" }
+  inventory-service:    { <<: *img, image: "ghcr.io/ar-ecommerce-platform/inventory-service:${IMAGE_TAG:-main}" }
+  order-service:        { <<: *img, image: "ghcr.io/ar-ecommerce-platform/order-service:${IMAGE_TAG:-main}" }
+  payment-service:      { <<: *img, image: "ghcr.io/ar-ecommerce-platform/payment-service:${IMAGE_TAG:-main}" }
+  notification-service: { <<: *img, image: "ghcr.io/ar-ecommerce-platform/notification-service:${IMAGE_TAG:-main}" }
