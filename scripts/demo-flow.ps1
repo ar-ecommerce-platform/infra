@@ -12,7 +12,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 $email = "demo+$(Get-Random)@example.com"
-$emailEnc = [uri]::EscapeDataString($email)
 $password = "Passw0rd!"
 
 function Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
@@ -62,7 +61,6 @@ Step "Place order (2x $p1, 1x $p2)"
 $order = Invoke-RestMethod -Method Post "$BaseUrl/api/orders" -Headers $auth `
   -ContentType application/json `
   -Body (@{
-      userId = $email
       items  = @(
         @{ productId = $p1; quantity = 2 },
         @{ productId = $p2; quantity = 1 }
@@ -71,33 +69,33 @@ $order = Invoke-RestMethod -Method Post "$BaseUrl/api/orders" -Headers $auth `
 Show $order
 if ($order.status -ne "CONFIRMED") { throw "expected CONFIRMED, got $($order.status)" }
 
-Step "Payment record $($order.paymentId)"
-Show (Invoke-RestMethod "$BaseUrl/api/payments/$($order.paymentId)" -Headers $auth)
+Step "Order $($order.id) (payment is internal - its id is on the order)"
+Show (Invoke-RestMethod "$BaseUrl/api/orders/$($order.id)" -Headers $auth)
 
 Step "Notifications for $email"
-Show (Invoke-RestMethod "$BaseUrl/api/notifications?userId=$emailEnc" -Headers $auth)
+Show (Invoke-RestMethod "$BaseUrl/api/notifications" -Headers $auth)
 
 Step "Orders for $email"
-Show (Invoke-RestMethod "$BaseUrl/api/orders?userId=$emailEnc" -Headers $auth)
+Show (Invoke-RestMethod "$BaseUrl/api/orders" -Headers $auth)
 
 Step "Failure path: unauthenticated order -> 401"
 try {
   Invoke-RestMethod -Method Post "$BaseUrl/api/orders" -ContentType application/json `
-    -Body (@{ userId = $email; items = @(@{ productId = $p1; quantity = 1 }) } | ConvertTo-Json) | Out-Null
+    -Body (@{ items = @(@{ productId = $p1; quantity = 1 }) } | ConvertTo-Json) | Out-Null
   throw "expected 401"
 } catch { Write-Host "got $($_.Exception.Response.StatusCode.value__) as expected" }
 
 Step "Failure path: over-stock order -> 409 REJECTED_STOCK"
 try {
   Invoke-RestMethod -Method Post "$BaseUrl/api/orders" -Headers $auth -ContentType application/json `
-    -Body (@{ userId = $email; items = @(@{ productId = 5; quantity = 9999 }) } | ConvertTo-Json) | Out-Null
+    -Body (@{ items = @(@{ productId = 5; quantity = 9999 }) } | ConvertTo-Json) | Out-Null
   throw "expected 409"
 } catch { Write-Host "got $($_.Exception.Response.StatusCode.value__) as expected" }
 
 Step "Failure path: expensive order over the payment ceiling -> 402 PAYMENT_FAILED"
 try {
   Invoke-RestMethod -Method Post "$BaseUrl/api/orders" -Headers $auth -ContentType application/json `
-    -Body (@{ userId = $email; items = @(@{ productId = $p1; quantity = 5 }) } | ConvertTo-Json) | Out-Null
+    -Body (@{ items = @(@{ productId = $p1; quantity = 5 }) } | ConvertTo-Json) | Out-Null
   throw "expected 402"
 } catch { Write-Host "got $($_.Exception.Response.StatusCode.value__) as expected" }
 
