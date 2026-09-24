@@ -13,7 +13,8 @@ x-img: &img
 services:
   discovery-server:     { <<: *img, image: "ghcr.io/ar-ecommerce-platform/discovery-server:${IMAGE_TAG:-develop}" }
   config-server:        { <<: *img, image: "ghcr.io/ar-ecommerce-platform/config-server:${IMAGE_TAG:-develop}" }
-  api-gateway:          { <<: *img, image: "ghcr.io/ar-ecommerce-platform/api-gateway:${IMAGE_TAG:-develop}" }
+  # E2E and its readiness loop hit login/register far more than 10x a minute from one IP.
+  api-gateway:          { <<: *img, image: "ghcr.io/ar-ecommerce-platform/api-gateway:${IMAGE_TAG:-develop}", environment: { SECURITY_AUTH_RATE_LIMIT_PER_MINUTE: "1000" } }
   auth-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/auth-service:${IMAGE_TAG:-develop}" }
   user-service:         { <<: *img, image: "ghcr.io/ar-ecommerce-platform/user-service:${IMAGE_TAG:-develop}" }
   product-service:      { <<: *img, image: "ghcr.io/ar-ecommerce-platform/product-service:${IMAGE_TAG:-develop}" }
