@@ -48,7 +48,6 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "userId": "{{email}}",
   "items": [
     { "productId": {{p1}}, "quantity": 2 },
     { "productId": {{p2}}, "quantity": 1 }
@@ -61,16 +60,16 @@ Content-Type: application/json
   client.global.set("paymentId", response.body.paymentId);
 %}
 
-### Payment record
-GET {{host}}/api/payments/{{paymentId}}
+### The order (payment is internal - its id is on the order)
+GET {{host}}/api/orders/{{orderId}}
 Authorization: Bearer {{token}}
 
 ### Notifications for this user
-GET {{host}}/api/notifications?userId={{email}}
+GET {{host}}/api/notifications
 Authorization: Bearer {{token}}
 
 ### Orders for this user
-GET {{host}}/api/orders?userId={{email}}
+GET {{host}}/api/orders
 Authorization: Bearer {{token}}
 
 ### --- failure paths ---
@@ -79,7 +78,7 @@ Authorization: Bearer {{token}}
 POST {{host}}/api/orders
 Content-Type: application/json
 
-{ "userId": "{{email}}", "items": [ { "productId": {{p1}}, "quantity": 1 } ] }
+{ "items": [ { "productId": {{p1}}, "quantity": 1 } ] }
 
 > {% client.test("401", () => client.assert(response.status === 401)); %}
 
@@ -88,7 +87,7 @@ POST {{host}}/api/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "userId": "{{email}}", "items": [ { "productId": 5, "quantity": 9999 } ] }
+{ "items": [ { "productId": 5, "quantity": 9999 } ] }
 
 > {% client.test("409", () => client.assert(response.status === 409)); %}
 
@@ -97,6 +96,6 @@ POST {{host}}/api/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "userId": "{{email}}", "items": [ { "productId": {{p1}}, "quantity": 5 } ] }
+{ "items": [ { "productId": {{p1}}, "quantity": 5 } ] }
 
 > {% client.test("402", () => client.assert(response.status === 402)); %}
