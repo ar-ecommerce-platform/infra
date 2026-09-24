@@ -17,7 +17,7 @@ jobs:
       - name: docker compose config
         working-directory: compose
         run: |
-          printf 'JWT_SECRET=x\nJWT_ISSUER=ecommerce-auth\n' > .env
+          printf 'JWT_SECRET=x\nJWT_ISSUER=ecommerce-auth\nPOSTGRES_PASSWORD=x\n' > .env
           docker compose -f docker-compose.yml config -q
           docker compose -f docker-compose.yml -f docker-compose.postgres.yml config -q
           docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.ci.yml config -q
