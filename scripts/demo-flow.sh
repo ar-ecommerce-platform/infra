@@ -41,37 +41,37 @@ curl -fsS "$BASE/api/inventory/$P1" -H "$AUTH"; echo
 
 step "Place order (2x $P1, 1x $P2)"
 ORDER=$(curl -fsS -X POST "$BASE/api/orders" -H "$AUTH" -H 'Content-Type: application/json' \
-  -d "{\"userId\":\"$EMAIL\",\"items\":[{\"productId\":$P1,\"quantity\":2},{\"productId\":$P2,\"quantity\":1}]}")
+  -d "{\"items\":[{\"productId\":$P1,\"quantity\":2},{\"productId\":$P2,\"quantity\":1}]}")
 echo "$ORDER"
 STATUS=$(echo "$ORDER" | j "['status']")
 [ "$STATUS" = "CONFIRMED" ] || { echo "expected CONFIRMED, got $STATUS"; exit 1; }
-PAYMENT_ID=$(echo "$ORDER" | j "['paymentId']")
+ORDER_ID=$(echo "$ORDER" | j "['id']")
 
-step "Payment $PAYMENT_ID"
-curl -fsS "$BASE/api/payments/$PAYMENT_ID" -H "$AUTH"; echo
+step "Order $ORDER_ID (payment is internal - its id is on the order)"
+curl -fsS "$BASE/api/orders/$ORDER_ID" -H "$AUTH"; echo
 
 step "Notifications for $EMAIL"
-curl -fsS -G "$BASE/api/notifications" --data-urlencode "userId=$EMAIL" -H "$AUTH"; echo
+curl -fsS "$BASE/api/notifications" -H "$AUTH"; echo
 
 step "Orders for $EMAIL"
-curl -fsS -G "$BASE/api/orders" --data-urlencode "userId=$EMAIL" -H "$AUTH"; echo
+curl -fsS "$BASE/api/orders" -H "$AUTH"; echo
 
 step "Failure: no token -> 401"
 code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/orders" \
   -H 'Content-Type: application/json' \
-  -d "{\"userId\":\"$EMAIL\",\"items\":[{\"productId\":$P1,\"quantity\":1}]}")
+  -d "{\"items\":[{\"productId\":$P1,\"quantity\":1}]}")
 echo "got $code"; [ "$code" = "401" ] || exit 1
 
 step "Failure: over-stock -> 409"
 code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/orders" -H "$AUTH" \
   -H 'Content-Type: application/json' \
-  -d "{\"userId\":\"$EMAIL\",\"items\":[{\"productId\":5,\"quantity\":9999}]}")
+  -d "{\"items\":[{\"productId\":5,\"quantity\":9999}]}")
 echo "got $code"; [ "$code" = "409" ] || exit 1
 
 step "Failure: over payment ceiling -> 402"
 code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/orders" -H "$AUTH" \
   -H 'Content-Type: application/json' \
-  -d "{\"userId\":\"$EMAIL\",\"items\":[{\"productId\":$P1,\"quantity\":5}]}")
+  -d "{\"items\":[{\"productId\":$P1,\"quantity\":5}]}")
 echo "got $code"; [ "$code" = "402" ] || exit 1
 
 printf '\nAll demo steps passed.\n'
