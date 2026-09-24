@@ -39,7 +39,7 @@ services:
     container_name: discovery-server
     restart: unless-stopped
     networks: [ecom]
-    ports: ["8761:8761"]
+    ports: ["127.0.0.1:8761:8761"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       <<: *healthcheck
@@ -51,7 +51,7 @@ services:
     container_name: config-server
     restart: unless-stopped
     networks: [ecom]
-    ports: ["8888:8888"]
+    ports: ["127.0.0.1:8888:8888"]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       CONFIG_REPO_LOCATIONS: file:/config-repo,file:/config-repo/{application}
@@ -69,11 +69,11 @@ services:
     build: { context: ../../auth-service }
     image: ecom/auth-service
     container_name: auth-service
-    ports: ["8081:8081"]
+    ports: ["127.0.0.1:8081:8081"]
     environment:
       <<: *common-env
       SERVER_PORT: 8081
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in infra/compose/.env}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-3600000}
       JWT_ISSUER: ${JWT_ISSUER:-ecommerce-auth}
     healthcheck:
@@ -85,7 +85,7 @@ services:
     build: { context: ../../user-service }
     image: ecom/user-service
     container_name: user-service
-    ports: ["8087:8087"]
+    ports: ["127.0.0.1:8087:8087"]
     environment:
       <<: *common-env
       SERVER_PORT: 8087
@@ -98,7 +98,7 @@ services:
     build: { context: ../../product-service }
     image: ecom/product-service
     container_name: product-service
-    ports: ["8083:8083"]
+    ports: ["127.0.0.1:8083:8083"]
     environment:
       <<: *common-env
       SERVER_PORT: 8083
@@ -111,7 +111,7 @@ services:
     build: { context: ../../inventory-service }
     image: ecom/inventory-service
     container_name: inventory-service
-    ports: ["8084:8084"]
+    ports: ["127.0.0.1:8084:8084"]
     environment:
       <<: *common-env
       SERVER_PORT: 8084
@@ -124,7 +124,7 @@ services:
     build: { context: ../../payment-service }
     image: ecom/payment-service
     container_name: payment-service
-    ports: ["8085:8085"]
+    ports: ["127.0.0.1:8085:8085"]
     environment:
       <<: *common-env
       SERVER_PORT: 8085
@@ -138,7 +138,7 @@ services:
     build: { context: ../../notification-service }
     image: ecom/notification-service
     container_name: notification-service
-    ports: ["8086:8086"]
+    ports: ["127.0.0.1:8086:8086"]
     environment:
       <<: *common-env
       SERVER_PORT: 8086
@@ -151,7 +151,7 @@ services:
     build: { context: ../../order-service }
     image: ecom/order-service
     container_name: order-service
-    ports: ["8082:8082"]
+    ports: ["127.0.0.1:8082:8082"]
     environment:
       <<: *common-env
       SERVER_PORT: 8082
@@ -171,7 +171,7 @@ services:
       CONFIG_SERVER_URL: http://config-server:8888
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       SERVER_PORT: 8080
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in infra/compose/.env}
       JWT_ISSUER: ${JWT_ISSUER:-ecommerce-auth}
       ENTRA_ISSUER_URI: ${ENTRA_ISSUER_URI:-}
       ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}

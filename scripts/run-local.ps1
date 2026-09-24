@@ -51,7 +51,8 @@ if (-not $SkipBuild) {
 
 $env:EUREKA_CLIENT_SERVICEURL_DEFAULTZONE = "http://localhost:8761/eureka/"
 $env:CONFIG_REPO_LOCATIONS = "file:$root/config-repo,file:$root/config-repo/{application}"
-if (-not $env:JWT_SECRET) { $env:JWT_SECRET = "dev-only-not-a-real-secret-change-me-0000000000000000" }
+# Fresh random secret per run - there is deliberately no fixed dev secret.
+if (-not $env:JWT_SECRET) { $env:JWT_SECRET = -join ((1..64) | ForEach-Object { "{0:x}" -f (Get-Random -Maximum 16) }) }
 
 $pids = @()
 foreach ($entry in $services.GetEnumerator()) {
